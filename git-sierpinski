@@ -24,6 +24,13 @@ my $root  = `echo @{ [ $count++ ] } | git commit-tree $tree`;
 # a cache for nodes
 my %cache;
 
+sub child {
+    my $cmd = qq{echo @{ [ $count++ ] } | git commit-tree $tree -p $_[0]\n};
+    print $cmd if $conf{verbose};
+    chomp( my $node = `sleep 1; $cmd` );    # for --date-order
+    return $node;
+}
+
 sub merge {
     my $id = join ':', sort @_;
     my $cmd
@@ -35,11 +42,10 @@ sub merge {
 
 sub triangle {
     my ( $n, $top ) = @_;
-    return ( ( merge($top) ) x 2, $top ) if !$n;
-    my @top  = triangle( $n - 1, $top );
-    my @left = triangle( $n - 1, merge($top) );
-    my $med = merge( $top[1], $top[2] );
-    my @right = triangle( $n - 1, $med );
+    return ( ( child($top) ) x 2, $top ) if !$n;
+    my @top   = triangle( $n - 1, $top );
+    my @left  = triangle( $n - 1, $top[0] );
+    my @right = triangle( $n - 1, merge( $top[1], $top[2] ) );
     my $m3 = merge( $left[1], $left[2], $right[0] );
     return ( $left[0], $m3, $right[2] );
 }
