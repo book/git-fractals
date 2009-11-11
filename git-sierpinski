@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use File::Path;
+
+# prepare some basic stuff
+my $depth = shift || 0;
+my $dir = "sierpenski-$depth";
+rmtree($dir);    # cleanup
+mkpath($dir);
+chdir $dir;
+
+# prepare empty tree
+`git init ; touch a ; git add a ; git commit -m empty ; git rm a ; git commit -m null`;
+my $tree = `git log -1 --pretty=format:%T`;
+
+# create root node
+my $count = 0;
+my $root  = `echo @{ [ $count++ ] } | git commit-tree $tree`;
+
+# cache for nodes
+my %cache;
+
+sub merge {
+    my $id = join ':', sort @_;
+    print my $cmd
+            = qq{echo @{ [ $count++ ] } | git commit-tree $tree @{ [ map {"-p $_"} @_ ] }\n};
+    chomp( $cache{$id} ||= `sleep 1; $cmd` );
+    return $cache{$id};
+}
+
+sub triangle {
+    my ( $n, $top ) = @_;
+    return ( ( merge($top) ) x 2, $top ) if !$n;
+    my @top  = triangle( $n - 1, $top );
+    my @left = triangle( $n - 1, merge($top) );
+    my $med = merge( $top[1], $top[2] );
+    my @right = triangle( $n - 1, $med );
+    my $m3 = merge( $left[1], $left[2], $right[0] );
+    return ( $left[0], $m3, $right[2] );
+}
+
+my @nodes = triangle( $depth, $root );
+my $master = merge( $nodes[1], $nodes[2] );
+`git reset --hard $master`;
+
