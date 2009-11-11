@@ -8,7 +8,7 @@ GetOptions( \my %conf, 'verbose!' ) or die "Usaage: $0 [ --verbose ]";
 
 # prepare some basic stuff
 my $depth = shift || 0;
-my $dir = "sierpenski-$depth";
+my $dir = "sierpinski-$depth";
 rmtree($dir);    # cleanup
 mkpath($dir);
 chdir $dir;
