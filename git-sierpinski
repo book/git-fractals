@@ -2,6 +2,9 @@
 use strict;
 use warnings;
 use File::Path;
+use Getopt::Long;
+
+GetOptions( \my %conf, 'verbose!' ) or die "Usaage: $0 [ --verbose ]";
 
 # prepare some basic stuff
 my $depth = shift || 0;
@@ -18,14 +21,15 @@ my $tree = `git log -1 --pretty=format:%T`;
 my $count = 0;
 my $root  = `echo @{ [ $count++ ] } | git commit-tree $tree`;
 
-# cache for nodes
+# a cache for nodes
 my %cache;
 
 sub merge {
     my $id = join ':', sort @_;
-    print my $cmd
-            = qq{echo @{ [ $count++ ] } | git commit-tree $tree @{ [ map {"-p $_"} @_ ] }\n};
-    chomp( $cache{$id} ||= `sleep 1; $cmd` );
+    my $cmd
+        = qq{echo @{ [ $count++ ] } | git commit-tree $tree @{ [ map {"-p $_"} @_ ] }\n};
+    print $cmd if $conf{verbose};
+    chomp( $cache{$id} ||= `sleep 1; $cmd` );    # for --date-order
     return $cache{$id};
 }
 
