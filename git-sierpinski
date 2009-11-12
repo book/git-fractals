@@ -34,9 +34,10 @@ sub child {
 }
 
 sub merge {
-    my $id = join ':', sort @_;
+    my @p = grep defined, @_;
+    my $id = join ':', sort @p;
     my $cmd
-        = qq{echo @{ [ $count++ ] } | git commit-tree $tree @{ [ map {"-p $_"} @_ ] }};
+        = qq{echo @{ [ $count++ ] } | git commit-tree $tree @{ [ map {"-p $_"} @p ] }};
     print "$cmd\n" if $conf{debug};
     return $cache{$id} if exists $cache{$id};
 
@@ -46,16 +47,16 @@ sub merge {
 }
 
 sub triangle {
-    my ( $n, $top ) = @_;
-    return ( ( child($top) ) x 2, $top ) if !$n;
-    my @top   = triangle( $n - 1, $top );
-    my @left  = triangle( $n - 1, $top[0] );
-    my @right = triangle( $n - 1, merge( $top[1], $top[2] ) );
-    my $m3 = merge( $left[1], $left[2], $right[0] );
-    return ( $left[0], $m3, $right[2] );
+    my ( $n, $left, $top, $right ) = @_;
+
+    return ( $left, merge( $left, $top, $right ) ) if !$n;
+
+    my @top   = triangle( $n - 1, $left,            $top,    $right );
+    my @left  = triangle( $n - 1, child( $top[0] ), $top[0], $top[1] );
+    my @right = triangle( $n - 1, $left[1],         $top[1], $right );
+    return ( $left[0], $right[1] );
 }
 
-my @nodes = triangle( $depth, $root );
-my $master = merge( $nodes[1], $nodes[2] );
-`git reset --hard $master`;
+my @nodes = triangle( $depth, child($root), $root, undef );
+`git reset --hard $nodes[1]`;
 
