@@ -10,7 +10,7 @@ GetOptions( \my %conf, 'debug!', 'verbose!' )
 # prepare some basic stuff
 my $sleep = 1;
 my $depth = shift || 0;
-my $dir = "cayley-$depth";
+my $dir   = "cayley-$depth";
 rmtree($dir);    # cleanup
 mkpath($dir);
 chdir $dir;
@@ -42,24 +42,21 @@ sub merge {
 }
 
 sub cayley {
-    my ( $n, $node ) = @_;
+    my ( $n, $root ) = @_;
 
     # create node
     if ( !$n ) {
         chomp( my $node = `echo @{ [ $count++ ] } | git commit-tree $tree` );
+        `git reset --hard $node` if $root;
         return $node;
     }
 
-    my @nodes = (
-        cayley( $n - 1 ),
-        cayley( $n - 1 ),
-        cayley( $n - 1 ),
-        cayley( $n - 1 )
-    );
+    my @nodes = ( cayley( $n - 1 ), cayley( $n - 1 ), cayley( $n - 1 ) );
+    push @nodes, cayley( $n - 1 ) if $root;    # first item
     my $master = merge(@nodes);
     `git reset --hard $master`;
     return $master;
 }
 
-cayley($depth);
+cayley( $depth, 1 );
 
