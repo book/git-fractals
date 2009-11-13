@@ -1,0 +1,65 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use File::Path;
+use Getopt::Long;
+
+GetOptions( \my %conf, 'debug!', 'verbose!' )
+    or die "Usaage: $0 [ --debug ] [ --verbose ]";
+
+# prepare some basic stuff
+my $sleep = 1;
+my $depth = shift || 0;
+my $dir = "cayley-$depth";
+rmtree($dir);    # cleanup
+mkpath($dir);
+chdir $dir;
+
+# prepare empty tree
+`git init ; touch a ; git add a ; git commit -m empty ; git rm a ; git commit -m null`;
+my $tree = `git log -1 --pretty=format:%T`;
+
+my $count = 0;
+
+sub child {
+    my $cmd = qq{echo @{ [ $count++ ] } | git commit-tree $tree -p $_[0]};
+    print "$cmd\n" if $conf{debug};
+    chomp( my $node = `sleep $sleep; $cmd` );    # for --date-order
+    print "$_[0] -> $node\n" if $conf{verbose};
+    return $node;
+}
+
+sub merge {
+    my @p = grep defined, @_;
+    my $id = join ':', sort @p;
+    my $cmd
+        = qq{echo @{ [ $count++ ] } | git commit-tree $tree @{ [ map {"-p $_"} @p ] }};
+    print "$cmd\n" if $conf{debug};
+
+    chomp( my $node = `sleep $sleep; $cmd` );    # for --date-order
+    print "$id -> $node\n" if $conf{verbose};
+    return $node;
+}
+
+sub cayley {
+    my ( $n, $node ) = @_;
+
+    # create node
+    if ( !$n ) {
+        chomp( my $node = `echo @{ [ $count++ ] } | git commit-tree $tree` );
+        return $node;
+    }
+
+    my @nodes = (
+        cayley( $n - 1 ),
+        cayley( $n - 1 ),
+        cayley( $n - 1 ),
+        cayley( $n - 1 )
+    );
+    my $master = merge(@nodes);
+    `git reset --hard $master`;
+    return $master;
+}
+
+cayley($depth);
+
