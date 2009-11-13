@@ -48,16 +48,16 @@ sub merge {
 }
 
 sub triangle {
-    my ( $n, $left, $top, $right ) = @_;
+    my ( $n, $top, @merge ) = @_;
+    return $top if !$n;
 
-    return ( $left, merge( $left, $top, $right ) ) if !$n;
-
-    my @top   = triangle( $n - 1, $left,            $top,    $right );
-    my @left  = triangle( $n - 1, child( $top[0] ), $top[0], $top[1] );
-    my @right = triangle( $n - 1, $left[1],         $top[1], $right );
-    return ( $left[0], $right[1] );
+    my $left = child($top);
+    my @left = triangle( $n -1 , $left, @merge );
+    my $right = merge( $top, $left );
+    `git reset --hard $right`;
+    my @right = triangle( $n -1 ,$right, @merge );
+    return @right;
 }
 
-my @nodes = triangle( $depth, child($root), $root, undef );
-`git reset --hard $nodes[1]`;
+triangle( $depth, $root );
 
