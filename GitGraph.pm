@@ -31,10 +31,10 @@ sub node {
     my ($branch, @parents) = @_;
 
     # the node-creation command
-    $ENV{GIT_AUTHOR_DATE} = $ENV{GIT_COMMITTER_DATE} = $^T + $count;
     my $cmd = qq{echo $count | git commit-tree $tree @{[map {"-p $_"} @parents]}};
     print "$cmd\n" if $debug;
-    chomp( my $node = `sleep $sleep; $cmd` );    # for --date-order
+    $ENV{GIT_AUTHOR_DATE} = $ENV{GIT_COMMITTER_DATE} = $^T + $count;
+    chomp( my $node = `$cmd` );
     print @parents ? join( ':', @parents ) . ' -> ' : '', $node, "\n" if $verbose;
 
     # set the branch position
