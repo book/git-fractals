@@ -3,14 +3,9 @@ use warnings;
 use File::Path;
 use Carp;
 
-my $verbose;
-my $debug;
-my $sleep = 0;
-sub import {
-    # verbose
-    # debug
-    # delay
-}
+# some debug / verbose commands
+my $debug = 0;
+my $verbose = 0;
 
 sub init {
     my ($dir) = @_;
