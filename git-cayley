@@ -5,13 +5,14 @@ use File::Path;
 use Getopt::Long;
 use GitGraph;
 
-GetOptions( \my %conf, 'debug!', 'verbose!' )
-    or die "Usage: $0 [ --debug ] [ --verbose ]";
+my %conf = ( repository => 'cayley' );
+GetOptions( \my %conf, 'repository=s' )
+    or die "Usage: $0 [ --repository <repository> ]";
 
 my $depth = shift || 0;
 
-init('cayley') if !-e 'cayley';
-set_git_repo('cayley');
+init( $conf{repository} ) if !-e $conf{repository};
+set_git_repo($conf{repository});
 
 sub cayley {
     my ( $branch, $n, $root ) = @_;

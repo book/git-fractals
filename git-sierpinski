@@ -4,13 +4,14 @@ use warnings;
 use GitGraph;
 use Getopt::Long;
 
-GetOptions( \my %conf, 'debug!', 'verbose!' )
-    or die "Usaage: $0 [ --debug ] [ --verbose ]";
+my %conf = ( repository => 'sierpinski' );
+GetOptions( \my %conf, 'repository=s' )
+    or die "Usage: $0 [ --repository <repository> ]";
 
 # prepare some basic stuff
 my $depth = shift || 0;
-init('sierpinski') if !-e 'sierpinski';
-set_git_repo('sierpinski');
+init( $option{repository} ) if !-e $option{repository};
+set_git_repo($option{repository});
 
 # a "node" is actually [ commit id, parent count ]
 #
