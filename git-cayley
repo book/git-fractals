@@ -6,7 +6,7 @@ use Getopt::Long;
 use GitGraph;
 
 my %conf = ( repository => 'cayley' );
-GetOptions( \my %conf, 'repository=s' )
+GetOptions( \%conf, 'repository=s' )
     or die "Usage: $0 [ --repository <repository> ]";
 
 my $depth = shift || 0;
