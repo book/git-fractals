@@ -1,0 +1,37 @@
+#!/bin/sh
+
+repo=fractals
+count="0 1 2 3 4 5 6"
+
+# create cayley graphs
+for i in $count ; do
+    (
+        echo 'digraph G { ranksep=3;'
+        GIT_DIR=$repo/.git git log --pretty=format:"%h %p" --date-order cayley-$i \
+        | perl -lna  -e 'print qq("$F[0]";), map {qq("$_"->"$F[0]";)} @F[ 1 .. $#F ]'
+        echo '}'
+    ) > cayley-$i.dot
+    twopi -Tpng cayley-$i.dot > cayley-$i.png
+done
+    
+# create sierpinski graphs
+for i in $count ; do
+    (
+        echo 'digraph G {'
+        GIT_DIR=$repo/.git git log --pretty=format:"%h %p" --date-order sierpinski-$i \
+        | perl -lna  -e 'print qq("$F[0]";), map {qq("$_"->"$F[0]";)} @F[ 1 .. $#F ]'
+        echo '}'
+    ) > sierpinski-$i.dot
+    dot -Tpng sierpinski-$i.dot > sierpinski-$i.png
+done
+
+# resize images if needed
+width=500
+for type in cayley sierpinski ; do
+    for i in $count ; do
+        if [ `perl -MImage::Info=image_info -le 'print image_info(shift)->{width}' $type-$i.png` -gt $width ] ; then
+            echo resize $type-$i.png
+            convert -resize $width $type-$i.png $type-$i.png
+        fi
+    done
+done
