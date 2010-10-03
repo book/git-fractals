@@ -12,13 +12,14 @@ GetOptions( \%conf, 'repository=s' )
 my $depth = shift || 0;
 
 init( $conf{repository} ) if !-e $conf{repository};
-set_git_repo($conf{repository});
+
+my $r = Git::Repository->new( work_tree => $conf{repository} );
 
 sub cayley {
     my ( $branch, $n, $root ) = @_;
 
     # create node
-    return node($branch) if !$n;
+    return node($r, $branch) if !$n;
 
     # branches
     my @nodes = (
@@ -27,7 +28,7 @@ sub cayley {
         cayley( $branch, $n - 1 )
     );
     push @nodes, cayley( $branch, $n - 1 ) if $root;    # first item
-    return node( $branch, @nodes);
+    return node( $r, $branch, @nodes);
 }
 
 cayley( "cayley-$depth", $depth, 1 );

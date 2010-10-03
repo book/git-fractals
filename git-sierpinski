@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use strict;
 use warnings;
 use GitGraph;
@@ -11,7 +11,8 @@ GetOptions( \%conf, 'repository=s' )
 # prepare some basic stuff
 my $depth = shift || 0;
 init( $conf{repository} ) if !-e $conf{repository};
-set_git_repo($conf{repository});
+
+my $r = Git::Repository->new( work_tree => $conf{repository} );
 
 # a "node" is actually [ commit id, parent count ]
 #
@@ -32,7 +33,7 @@ sub sierpinski {
     my ( $branch, $prev ) = @_;
 
     # empty row
-    return [ [ node($branch), 0 ] ] if !$prev || !@$prev;
+    return [ [ node($r, $branch), 0 ] ] if !$prev || !@$prev;
 
     my $this;
     for my $i ( 0 .. @$prev ) {
@@ -43,7 +44,7 @@ sub sierpinski {
 
         @parents = grep {$_} @parents;
         push @$this,
-            [ ( @parents ? node( $branch, @parents ) : '' ), 0 + @parents ];
+            [ ( @parents ? node( $r, $branch, @parents ) : '' ), 0 + @parents ];
     }
     return $this;
 }
