@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use File::Path;
 use Carp;
+use Git::Repository;
 
 # some debug / verbose commands
 my $debug = 0;
@@ -11,15 +12,16 @@ sub init {
     my ($dir) = @_;
     croak "$dir already exists" if -e $dir;
 
-    # create the repository, and an empty tree in the object database
+    # create the repository
+    croak "Git > 1.6.5 required" if Git::Repository->version_lt( '1.6.5' );
     mkpath( $dir );
-    $ENV{GIT_DIR} = "$dir/.git";
-    `git init;touch a;git add a;git commit -m empty;git rm a;git commit -m null;git checkout HEAD^;git branch -D master`;
-}
+    my $r = Git::Repository->create( init => $dir );
 
-sub set_git_repo {
-    my ($dir) = @_;
-    $ENV{GIT_DIR} = "$dir/.git";
+    # add the empty tree in the object database
+    my $cmd = $r->command('mktree');
+    $cmd->stdin->close;
+
+    return;
 }
 
 # some initialisations
@@ -28,17 +30,18 @@ my $count = 0;
 sub reset_count { $count = 0 }
 
 sub node {
-    my ($branch, @parents) = @_;
+    my ($r, $branch, @parents) = @_;
 
     # the node-creation command
-    my $cmd = qq{echo $count | git commit-tree $tree @{[map {"-p $_"} @parents]}};
-    print "$cmd\n" if $debug;
-    $ENV{GIT_AUTHOR_DATE} = $ENV{GIT_COMMITTER_DATE} = $^T + $count;
-    chomp( my $node = `$cmd` );
-    print @parents ? join( ':', @parents ) . ' -> ' : '', $node, "\n" if $verbose;
+    my @cmd = ( 'commit-tree', $tree, map { -p => $_} @parents );
+    print "git @cmd\n" if $debug;
+    my $node = $r->run( @cmd,
+        { input => $count, env => { GIT_COMMITTER_DATE => $^T + $count } } );
+    print @parents ? join( ':', @parents ) . ' -> ' : '', $node, "\n"
+        if $verbose;
 
     # set the branch position
-    `git branch -f $branch $node`;
+    $r->run( 'update-ref', "refs/heads/$branch", $node );
 
     # return the new node
     $count++;
