@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use File::Path;
 use Carp;
-use Git::Repository;
+use Git::Repository 1.12;
 
 # some debug / verbose commands
 my $debug = 0;
@@ -18,8 +18,7 @@ sub init {
     my $r = Git::Repository->create( init => $dir );
 
     # add the empty tree in the object database
-    my $cmd = $r->command('mktree');
-    $cmd->stdin->close;
+    $r->run( mktree => { input => '' } );
 
     return;
 }
