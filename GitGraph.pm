@@ -32,10 +32,13 @@ sub node {
     my ($r, $branch, @parents) = @_;
 
     # the node-creation command
-    my @cmd = ( 'commit-tree', $tree, map { -p => $_} @parents );
+    my @cmd = ( 'commit-tree', $tree, map { -p => $_ } @parents );
     print "git @cmd\n" if $debug;
     my $node = $r->run( @cmd,
-        { input => $count, env => { GIT_COMMITTER_DATE => $^T + $count } } );
+        { input => $count, env => {
+ GIT_COMMITTER_DATE => $^T + $count,
+ GIT_AUTHOR_DATE => $^T + $count,
+ } } );
     print @parents ? join( ':', @parents ) . ' -> ' : '', $node, "\n"
         if $verbose;
 

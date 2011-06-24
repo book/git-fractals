@@ -5,6 +5,7 @@ count="0 1 2 3 4 5 6"
 
 # create cayley graphs
 for i in $count ; do
+    echo "# cayley $i"
     (
         echo 'digraph G { ranksep=3;'
         GIT_DIR=$repo/.git git log --pretty=format:"%h %p" --date-order cayley-$i \
@@ -16,6 +17,7 @@ done
     
 # create sierpinski graphs
 for i in $count ; do
+    echo "# sierpinski $i"
     (
         echo 'digraph G {'
         GIT_DIR=$repo/.git git log --pretty=format:"%h %p" --date-order sierpinski-$i \
@@ -25,13 +27,3 @@ for i in $count ; do
     dot -Tpng sierpinski-$i.dot > sierpinski-$i.png
 done
 
-# resize images if needed
-width=500
-for type in cayley sierpinski ; do
-    for i in $count ; do
-        if [ `perl -MImage::Info=image_info -le 'print image_info(shift)->{width}' $type-$i.png` -gt $width ] ; then
-            echo resize $type-$i.png
-            convert -resize $width $type-$i.png $type-$i.png
-        fi
-    done
-done
